@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agentes IA · GreenFlow</title>
+<link rel="stylesheet" href="assets/css/style.css">
+<link rel="icon" href="assets/images/logo-greenflow.png">
+</head>
+<body>
+
+<div class="shell">
+  <div id="sbMount"></div>
+  <div class="main">
+    <div class="topbar">
+      <div class="tb-title">Agentes IA<span class="tb-sub">criação e gestão de prompts do Claude</span></div>
+      <div class="tb-acts"><button class="btn btn-gold" onclick="newAgent()">+ Criar Agente</button></div>
+    </div>
+    <div class="content">
+      <div class="grid-3" id="agentGrid"></div>
+      <!-- EDITOR -->
+      <div class="card" id="editorCard" style="display:none;">
+        <div class="ch"><div class="ch-t">✏️ Editor de Agente</div><button class="btn btn-ghost" onclick="closeEditor()">✕ Fechar</button></div>
+        <div style="padding:18px;display:flex;flex-direction:column;gap:13px;">
+          <div class="grid-3">
+            <div class="field"><label>Nome do agente</label><input id="agName" placeholder="Ex: Energy"/></div>
+            <div class="field"><label>Modelo Claude</label>
+              <select id="agModel">
+                <option value="haiku">Haiku · leve e rápido (R$ baixo)</option>
+                <option value="sonnet">Sonnet · premium (análise)</option>
+              </select>
+            </div>
+            <div class="field"><label>Tom de comunicação</label>
+              <select id="agTone">
+                <option>Profissional e objetivo</option><option>Descontraído e próximo</option>
+                <option>Consultivo</option><option>Motivacional</option>
+              </select>
+            </div>
+          </div>
+          <div class="field"><label>System Prompt (instruções do agente)</label>
+            <textarea id="agSystem" rows="5" placeholder="Defina o papel, conhecimento e regras do agente…"></textarea>
+          </div>
+          <div style="display:flex;gap:10px;">
+            <button class="btn btn-green" onclick="saveAgent()">✅ Salvar agente</button>
+            <button class="btn btn-ghost" onclick="testAgent()">🧪 Testar no chat</button>
+          </div>
+        </div>
+      </div>
+      <!-- TEST CHAT -->
+      <div class="card" id="testCard" style="display:none;">
+        <div class="ch"><div class="ch-t">🧪 Teste ao vivo · <span id="testName" style="color:var(--gold);"></span></div>
+          <span class="pill pill-m" id="testModel"></span></div>
+        <div style="padding:16px;max-height:320px;overflow-y:auto;" id="testMsgs"></div>
+        <div style="border-top:1px solid var(--b1);padding:11px 14px;display:flex;gap:8px;">
+          <input id="testInput" placeholder="Escreva como se fosse um lead…" style="flex:1;background:var(--s3);border:1px solid var(--b1);border-radius:9px;color:var(--t1);font-family:'Inter',sans-serif;font-size:.82rem;padding:9px 12px;outline:none;"/>
+          <button class="btn btn-green" onclick="sendTest()">➤</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="js/app.js"></script>
+<script src="js/claude-api.js"></script>
+<script>
+let editingId=null, testingAgent=null, testHistory=[];
+if(gfGuard()){
+  document.getElementById('sbMount').outerHTML = gfSidebar('agentes');
+  renderAgents();
+}
+function getAgents(){
+  const stored = GF.store.g('agents', null);
+  const defs = defaultAgents();
+  if(!stored) return defs;
+  // migração: adiciona agentes padrão novos que ainda não existem
+  let changed=false;
+  defs.forEach(d=>{ if(!stored.find(s=>s.id===d.id)){ stored.push(d); changed=true; } });
+  if(changed) GF.store.s('agents', stored);
+  return stored;
+}
+function setAgents(a){ GF.store.s('agents', a); }
+function renderAgents(){
+  const ags = getAgents();
+  const newCard = `
+    <div class="agent-new" onclick="newAgent()">
+      <div class="agent-new-plus">+</div>
+      <h4 style="margin-top:14px;font-family:'Syne',sans-serif;font-weight:700;font-size:.9rem;">Criar Novo Agente</h4>
+      <p style="font-size:.68rem;color:var(--t3);margin-top:4px;">Configure um novo comportamento para o Claude</p>
+    </div>`;
+  const cards = ags.map(a=>{
+    const isSonnet = a.model==='sonnet';
+    const badge = isSonnet
+      ? '<span class="pill pill-gold">Claude Sonnet</span>'
+      : '<span class="pill pill-g">Claude Haiku</span>';
+    const uses = a.uses ?? 0;
+    return `
+    <div class="agent-v2">
+      <div>
+        <div class="agent-v2-head">
+          <div>${badge}<div class="agent-v2-name">${a.icon||'◈'} ${a.name}</div></div>
+          <span class="agent-dot ${a.active?'on':'off'}" onclick="toggleAgent('${a.id}')" title="${a.active?'Ativo — clique para pausar':'Inativo — clique para ativar'}" style="cursor:pointer;"></span>
+        </div>
+        <p class="agent-prompt">"${(a.system||'Sem prompt definido').slice(0,140)}…"</p>
+      </div>
+      <div class="agent-v2-foot">
+        <span class="agent-uses mono">Usado ${uses.toLocaleString('pt-BR')} ${uses===1?'vez':'vezes'}</span>
+        <div style="display:flex;gap:12px;">
+          <button class="agent-test-link" onclick="openTest('${a.id}')">Testar</button>
+          <button class="agent-edit" onclick="editAgent('${a.id}')">Editar Prompt</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('agentGrid').innerHTML = newCard + cards;
+}
+function toggleAgent(id){
+  const ags=getAgents(); const a=ags.find(x=>x.id===id);
+  if(a){a.active=!a.active;setAgents(ags);renderAgents();toast(a.active?'✅ '+a.name+' ativado':'⏸ '+a.name+' pausado');}
+}
+function newAgent(){ editingId=null;
+  document.getElementById('agName').value=''; document.getElementById('agSystem').value='';
+  document.getElementById('agModel').value='haiku';
+  document.getElementById('editorCard').style.display='block';
+  document.getElementById('editorCard').scrollIntoView({behavior:'smooth'});
+}
+function editAgent(id){
+  const a=getAgents().find(x=>x.id===id); if(!a)return;
+  editingId=id;
+  document.getElementById('agName').value=a.name;
+  document.getElementById('agModel').value=a.model;
+  document.getElementById('agTone').value=a.tone||'Profissional e objetivo';
+  document.getElementById('agSystem').value=a.system||'';
+  document.getElementById('editorCard').style.display='block';
+  document.getElementById('editorCard').scrollIntoView({behavior:'smooth'});
+}
+function closeEditor(){ document.getElementById('editorCard').style.display='none'; editingId=null; }
+function saveAgent(){
+  const name=document.getElementById('agName').value.trim();
+  if(!name){toast('⚠️ Dê um nome ao agente');return;}
+  const ags=getAgents();
+  const data={ name, model:document.getElementById('agModel').value,
+    tone:document.getElementById('agTone').value, system:document.getElementById('agSystem').value.trim() };
+  if(editingId){ Object.assign(ags.find(x=>x.id===editingId)||{}, data); }
+  else{ ags.push({ id:'ag_'+Date.now(), icon:'◈', active:true, ...data }); }
+  setAgents(ags); renderAgents(); closeEditor(); toast('✅ Agente salvo!');
+}
+function openTest(id){
+  testingAgent=getAgents().find(x=>x.id===id); if(!testingAgent)return;
+  testHistory=[];
+  document.getElementById('testName').textContent=testingAgent.name;
+  document.getElementById('testModel').textContent=testingAgent.model==='sonnet'?'Sonnet':'Haiku';
+  document.getElementById('testMsgs').innerHTML='<div style="text-align:center;color:var(--t3);font-size:.74rem;padding:12px;">Envie uma mensagem para testar o agente</div>';
+  document.getElementById('testCard').style.display='block';
+  document.getElementById('testCard').scrollIntoView({behavior:'smooth'});
+}
+function testAgent(){ if(editingId)openTest(editingId); else toast('⚠️ Salve o agente primeiro'); }
+function addTestMsg(role,txt){
+  const w=document.getElementById('testMsgs');
+  if(w.querySelector('div[style*="text-align:center"]'))w.innerHTML='';
+  w.innerHTML+=`<div class="chat-msg ${role==='ai'?'ai':'user'}">
+    <div class="chat-av">${role==='ai'?'◈':'👤'}</div>
+    <div class="chat-bub">${txt}</div></div>`;
+  w.scrollTop=w.scrollHeight;
+}
+async function sendTest(){
+  const inp=document.getElementById('testInput'); const txt=inp.value.trim(); if(!txt)return;
+  inp.value=''; addTestMsg('user',txt);
+  testHistory.push({role:'user',content:txt});
+  addTestMsg('ai','<span style="color:var(--t3);">digitando…</span>');
+  const r = await callClaude({ model:testingAgent.model, system:testingAgent.system, messages:testHistory });
+  const msgs=document.getElementById('testMsgs'); msgs.removeChild(msgs.lastChild);
+  addTestMsg('ai', r.text);
+  testHistory.push({role:'assistant',content:r.text});
+  saveConversation(testingAgent.name, testHistory);
+  // incrementa contador de uso
+  const ags=getAgents(); const ag=ags.find(x=>x.id===testingAgent.id);
+  if(ag){ag.uses=(ag.uses||0)+1;setAgents(ags);renderAgents();}
+}
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&document.activeElement?.id==='testInput')sendTest();
+});
+</script>
+</body>
+</html>

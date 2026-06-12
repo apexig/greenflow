@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Configurações · GreenFlow</title>
+<link rel="stylesheet" href="assets/css/style.css">
+<link rel="icon" href="assets/images/logo-greenflow.png">
+</head>
+<body>
+
+<div class="shell">
+  <div id="sbMount"></div>
+  <div class="main">
+    <div class="topbar">
+      <div class="tb-title">Configurações<span class="tb-sub">faturamento, créditos e chaves de API</span></div>
+      <div class="tb-acts"><span class="pill pill-gold">Apex Agilis</span></div>
+    </div>
+    <div class="content" style="max-width:760px;">
+
+      <!-- PLANO E RECARGAS -->
+      <div class="card">
+        <div class="ch"><div class="ch-t">💰 Plano e Recargas</div><span class="pill pill-g">● Ativo</span></div>
+        <div style="padding:18px;">
+          <p style="font-size:.72rem;color:var(--t2);margin-bottom:16px;">Gerencie a carteira de consumo das suas requisições de IA.</p>
+          <div style="margin-bottom:16px;">
+            <div class="prog-head">
+              <span class="prog-lbl">Consumo de Créditos Mensal</span>
+              <span class="prog-val" id="progVal">R$ 0,00 / R$ 2.000,00</span>
+            </div>
+            <div class="prog-track"><div class="prog-fill" id="progFill" style="width:0%;"></div></div>
+            <div style="display:flex;justify-content:space-between;font-size:.6rem;color:var(--t3);margin-top:5px;">
+              <span id="progPct">0% utilizado</span>
+              <span>renova em 10/07/2025</span>
+            </div>
+          </div>
+          <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr);" id="billKpis"></div>
+          <div style="display:flex;gap:10px;margin-top:16px;">
+            <button class="btn btn-green" onclick="addCredits()">+ Adicionar Saldo</button>
+            <button class="btn btn-ghost" onclick="toast('📧 Fatura enviada ao seu e-mail')">📄 Baixar fatura</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHAVES DE API -->
+      <div class="card">
+        <div class="ch"><div class="ch-t">🔑 Chaves de API</div><span class="pill pill-m">Criptografadas localmente</span></div>
+        <div style="padding:18px;display:flex;flex-direction:column;gap:13px;">
+          <div class="field">
+            <label>Anthropic API Key (Claude)</label>
+            <input class="mono-inp" id="keyAnthropic" type="password" placeholder="sk-ant-api03-…"/>
+            <div style="font-size:.62rem;color:var(--t3);margin-top:4px;">Usada pelos agentes Sonnet/Haiku · console.anthropic.com</div>
+          </div>
+          <div class="grid-2">
+            <div class="field">
+              <label>Meta WABA ID</label>
+              <input class="mono-inp" id="keyWaba" placeholder="123456789012345"/>
+            </div>
+            <div class="field">
+              <label>Meta Phone Number ID</label>
+              <input class="mono-inp" id="keyPhone" placeholder="123456789012345"/>
+            </div>
+          </div>
+          <div class="field">
+            <label>Meta Access Token (System User)</label>
+            <input class="mono-inp" id="keyMeta" type="password" placeholder="EAAxxxxxxxx…"/>
+          </div>
+          <button class="btn btn-green" onclick="saveKeys()">✅ Salvar chaves</button>
+        </div>
+      </div>
+
+      <!-- PLANO -->
+      <div class="card">
+        <div class="ch"><div class="ch-t">📦 Plano da plataforma</div></div>
+        <div style="padding:18px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+          <div style="flex:1;min-width:200px;">
+            <div style="font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:800;color:var(--gold);">Master · White-label</div>
+            <div style="font-size:.74rem;color:var(--t2);margin-top:4px;">Tráfego pago em escala · automação · sites ilimitados · sub-rede · white-label</div>
+          </div>
+          <div style="text-align:right;">
+            <div class="mono" style="font-size:1.4rem;font-weight:700;color:var(--g);">R$ 3.498<span style="font-size:.7rem;color:var(--t3);">/mês</span></div>
+            <div style="font-size:.62rem;color:var(--t3);">próxima cobrança: 10/07/2025</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+<script src="js/app.js"></script>
+<script src="js/claude-api.js"></script>
+<script>
+if(gfGuard()){
+  document.getElementById('sbMount').outerHTML = gfSidebar('configuracoes');
+  renderBilling(); loadKeys();
+}
+function renderBilling(){
+  const st = gfStats();
+  const consumo = (st.totalCost*5.2) || 450.00;
+  const LIMITE = 2000.00;
+  const saldo = Math.max(GF.store.g('credits',1240.50) - (st.totalCost*5.2), 0);
+  const pct = Math.min(consumo/LIMITE*100, 100);
+  document.getElementById('progVal').textContent = fmtBRL(consumo)+' / '+fmtBRL(LIMITE);
+  document.getElementById('progFill').style.width = pct.toFixed(1)+'%';
+  document.getElementById('progPct').textContent = pct.toLocaleString('pt-BR',{maximumFractionDigits:1})+'% utilizado';
+  document.getElementById('billKpis').innerHTML =
+    kpiCard('Saldo de créditos', fmtBRL(saldo), 'disponível para IA','var(--gold)','💰')+
+    kpiCard('Consumo do mês', fmtBRL(consumo), st.logs.length+' requisições','var(--sky)','📊')+
+    kpiCard('Custo médio/conversa','R$ 0,02','Haiku + cache otimizado','var(--g)','⚡');
+}
+function addCredits(){
+  const cur = GF.store.g('credits',1240.50);
+  GF.store.s('credits', cur+500);
+  renderBilling(); toast('✅ R$ 500,00 em créditos adicionados!');
+}
+function saveKeys(){
+  const ks = {
+    anthropic: document.getElementById('keyAnthropic').value.trim(),
+    waba: document.getElementById('keyWaba').value.trim(),
+    phone: document.getElementById('keyPhone').value.trim(),
+    meta: document.getElementById('keyMeta').value.trim(),
+  };
+  GF.store.s('keys', ks);
+  toast('🔑 Chaves salvas com segurança!');
+}
+function loadKeys(){
+  const ks = GF.store.g('keys',{});
+  if(ks.anthropic) document.getElementById('keyAnthropic').value=ks.anthropic;
+  if(ks.waba) document.getElementById('keyWaba').value=ks.waba;
+  if(ks.phone) document.getElementById('keyPhone').value=ks.phone;
+  if(ks.meta) document.getElementById('keyMeta').value=ks.meta;
+}
+</script>
+</body>
+</html>

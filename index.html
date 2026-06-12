@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login · GreenFlow</title>
+<link rel="stylesheet" href="assets/css/style.css">
+<link rel="icon" href="assets/images/logo-greenflow.png">
+</head>
+<body>
+
+<div class="login-page">
+  <div class="login-box">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:10px;">
+      <div style="font-size:.66rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gold);display:flex;align-items:center;gap:8px;">
+        <span style="width:24px;height:1px;background:var(--gold);opacity:.4;"></span>Apex Agilis<span style="width:24px;height:1px;background:var(--gold);opacity:.4;"></span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <img src="assets/images/logo-greenflow.png" alt="GreenFlow" style="width:56px;height:56px;border-radius:15px;box-shadow:0 0 36px rgba(0,209,104,.3);"/>
+        <div>
+          <div style="font-family:'Syne',sans-serif;font-size:1.9rem;font-weight:800;letter-spacing:-1px;">Green<em style="font-style:normal;color:var(--g);">Flow</em></div>
+          <div style="font-size:.68rem;color:var(--t3);margin-top:2px;">iGreen OS · Plataforma de licenciados</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:7px;background:rgba(24,119,242,.1);border:1px solid rgba(24,119,242,.22);border-radius:20px;padding:5px 14px;font-size:.68rem;color:#4A90E2;font-weight:500;">
+        <span style="width:6px;height:6px;border-radius:50%;background:#4A90E2;"></span>
+        Meta Business Partner · WhatsApp Cloud API Oficial
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;">
+      <div class="lcard gold-card" onclick="gfLogin('apex')">
+        <div style="font-size:2rem;">🛡️</div>
+        <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:.95rem;color:var(--gold);">Apex Agilis</div>
+        <div style="font-size:.72rem;color:var(--t2);line-height:1.5;">Acesso master · IA · agentes · rede completa</div>
+        <span class="pill pill-gold">PROPRIETÁRIA</span>
+      </div>
+      <div class="lcard green-card" onclick="gfLogin('lic', 'Licenciado iGreen')">
+        <div style="font-size:2rem;">⚡</div>
+        <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:.95rem;">Licenciado</div>
+        <div style="font-size:.72rem;color:var(--t2);line-height:1.5;">Seus agentes · conversas · configurações</div>
+        <span class="pill pill-g">LICENCIADO</span>
+      </div>
+    </div>
+    <div style="font-size:.62rem;color:var(--t4);letter-spacing:.4px;">Powered by <span style="color:var(--gold);">Apex Agilis</span> · Claude AI (Anthropic) · Meta Cloud API</div>
+  </div>
+</div>
+<script src="js/app.js"></script>
+<script>
+// Auto-login via ?lic=ID
+const p = new URLSearchParams(location.search);
+const lic = p.get('lic');
+if(lic){ GF.session.role='lic'; GF.session.name=lic; location.href='dashboard.html'; }
+</script>
+</body>
+</html>

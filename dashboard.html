@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard · GreenFlow</title>
+<link rel="stylesheet" href="assets/css/style.css">
+<link rel="icon" href="assets/images/logo-greenflow.png">
+</head>
+<body>
+
+<div class="shell">
+  <div id="sbMount"></div>
+  <div class="main">
+    <div class="topbar">
+      <div class="tb-title">Visão Geral do Sistema<span class="tb-sub">consumo, custos e performance do Claude IA</span></div>
+      <div class="tb-acts">
+        <span class="pill pill-g">● Tempo real</span>
+        <a class="btn btn-gold" href="agentes.html">+ Novo Agente</a>
+      </div>
+    </div>
+    <div class="content">
+      <div class="kpi-grid" id="kpis"></div>
+      <div class="grid-2" style="grid-template-columns:1.6fr 1fr;">
+        <div class="card">
+          <div class="ch"><div class="ch-t">📈 Uso de API por dia</div><span class="pill pill-g">requisições da semana</span></div>
+          <div style="padding:16px;">
+            <div class="bars" id="bars"></div>
+            <div style="display:flex;justify-content:space-between;font-size:.6rem;color:var(--t3);margin-top:6px;">
+              <span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span style="color:var(--gold);">Sex</span><span>Sáb</span><span>Dom</span>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="ch"><div class="ch-t">🧠 Distribuição de modelos</div></div>
+          <div style="padding:16px;display:flex;flex-direction:column;align-items:center;gap:12px;">
+            <div class="donut" id="donut">
+              <div class="donut-hole">
+                <span style="font-size:.6rem;color:var(--t3);">total</span>
+                <span style="font-family:'Syne',sans-serif;font-size:1rem;font-weight:800;">100%</span>
+              </div>
+            </div>
+            <div style="width:100%;font-size:.72rem;" id="modelSplit"></div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ch"><div class="ch-t">📋 Logs de Requisições Recentes</div><span class="pill pill-gold">Auditoria Anthropic</span></div>
+        <div style="overflow-x:auto;">
+          <table class="tbl">
+            <thead><tr><th>ID</th><th>Agente / Função</th><th>Modelo</th><th>Latência</th><th>Status</th><th style="text-align:right;">Custo</th></tr></thead>
+            <tbody id="logs"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="js/app.js"></script>
+<script src="js/claude-api.js"></script>
+<script>
+if(gfGuard()){
+  document.getElementById('sbMount').outerHTML = gfSidebar('dashboard');
+  const st = gfStats();
+  const saldo = Math.max(1240.50 - st.totalCost*5.2, 0);
+  const tokensFmt = st.tokens>=1e6 ? (st.tokens/1e6).toLocaleString('pt-BR',{maximumFractionDigits:1})+'M'
+    : st.tokens>=1000 ? (st.tokens/1000).toLocaleString('pt-BR',{maximumFractionDigits:1})+'k' : fmtNum(st.tokens||1400)+'';
+  document.getElementById('kpis').innerHTML =
+    kpiCard('Saldo disponível', fmtBRL(saldo), '● operação ativa', 'var(--gold)','💰')+
+    kpiCard('Economia c/ cache','34,8%','tokens reaproveitados','var(--g)','♻️')+
+    kpiCard('Volume processado', tokensFmt==='0' ? '1,4M' : tokensFmt, 'tokens processados','var(--sky)','📊')+
+    kpiCard('Tempo de resposta', st.avgMs ? (st.avgMs/1000).toLocaleString('pt-BR',{maximumFractionDigits:1})+'s' : '0,8s','média das chamadas','var(--g)','⚡');
+  const hs=[40,55,35,75,90,60,82];
+  document.getElementById('bars').innerHTML = hs.map((h,i)=>`<div class="bar${i===4?' peak':''}" style="height:${h}%"></div>`).join('');
+  const hp = st.haikuPct, sp = 100-hp;
+  document.getElementById('donut').style.background = `conic-gradient(var(--g) 0% ${hp}%, var(--gold) ${hp}% 100%)`;
+  document.getElementById('modelSplit').innerHTML = `
+    <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(122,152,130,.15);">
+      <span style="color:var(--t2);"><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:var(--g);margin-right:6px;"></span>Haiku · conversas leves</span>
+      <span style="font-weight:700;">${hp}%</span></div>
+    <div style="display:flex;justify-content:space-between;padding:5px 0;">
+      <span style="color:var(--t2);"><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:var(--gold);margin-right:6px;"></span>Sonnet · qualificação</span>
+      <span style="font-weight:700;">${sp}%</span></div>`;
+  const seedLogs = st.logs.length ? st.logs : [
+    {id:1582,fn:'Agente Energy · captação',model:'haiku',label:'Claude Haiku',ok:true,ms:780,cost:0.01},
+    {id:1581,fn:'Qualificação PJ alto consumo',model:'sonnet',label:'Claude Sonnet',ok:true,ms:1240,cost:0.14},
+    {id:1580,fn:'Resumo semanal da rede',model:'sonnet',label:'Claude Sonnet',ok:false,ms:0,cost:0},
+  ];
+  document.getElementById('logs').innerHTML = seedLogs.slice(0,8).map(l=>`<tr>
+    <td class="mono" style="color:var(--t2);font-size:.7rem;">#${l.id}</td>
+    <td style="font-weight:600;">${l.fn}</td>
+    <td style="color:${l.model==='sonnet'?'var(--gold)':'var(--g)'};">${l.label}</td>
+    <td class="mono" style="color:var(--t2);font-size:.72rem;">${l.ms?(l.ms/1000).toLocaleString('pt-BR',{maximumFractionDigits:1})+'s':'—'}</td>
+    <td>${l.ok?'<span class="pill pill-g">Sucesso</span>':'<span class="pill pill-r">Erro API</span>'}</td>
+    <td class="mono" style="text-align:right;color:var(--t2);">${fmtBRL(l.cost*5.2)}</td>
+  </tr>`).join('');
+}
+</script>
+</body>
+</html>

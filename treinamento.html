@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Treinamento · GreenFlow</title>
+<link rel="stylesheet" href="assets/css/style.css">
+<link rel="icon" href="assets/images/logo-greenflow.png">
+</head>
+<body>
+
+<div class="shell">
+  <div id="sbMount"></div>
+  <div class="main">
+    <div class="topbar">
+      <div class="tb-title">Academia iGreen OS<span class="tb-sub">treinamentos e materiais exclusivos</span></div>
+      <div class="tb-acts"><span class="pill pill-gold">🎓 Exclusivo</span></div>
+    </div>
+    <div class="content">
+
+      <!-- HERO COM PROGRESSO -->
+      <div style="display:flex;align-items:center;gap:14px;background:linear-gradient(135deg,rgba(212,175,55,.12),rgba(0,209,104,.08));border:1px solid var(--goldb);border-radius:14px;padding:18px 20px;">
+        <div style="width:48px;height:48px;border-radius:13px;background:linear-gradient(135deg,#A8861E,var(--gold));display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0;">🎓</div>
+        <div style="flex:1;">
+          <div style="font-family:'Syne',sans-serif;font-size:1rem;font-weight:800;">Academia iGreen OS</div>
+          <div style="font-size:.74rem;color:var(--t2);margin-top:2px;">Domine a plataforma e multiplique suas conversões — do agente IA ao fechamento</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          <div class="mono" style="font-size:1.4rem;font-weight:700;color:var(--gold);" id="acadPct">0%</div>
+          <div style="font-size:.6rem;color:var(--t3);">concluído</div>
+        </div>
+      </div>
+
+      <!-- BARRA DE PROGRESSO GERAL -->
+      <div class="card" style="padding:16px 18px;">
+        <div class="prog-head">
+          <span class="prog-lbl">Sua jornada de aprendizado</span>
+          <span class="prog-val" id="acadCount">0 de 6 cursos</span>
+        </div>
+        <div class="prog-track"><div class="prog-fill" id="acadFill" style="width:0%;"></div></div>
+      </div>
+
+      <!-- GRID DE CURSOS -->
+      <div class="grid-3" id="cursosGrid"></div>
+
+      <!-- MATERIAIS -->
+      <div class="card">
+        <div class="ch"><div class="ch-t">📑 Materiais de apoio</div><span class="pill pill-gold">PDF · Downloads</span></div>
+        <div style="padding:14px;display:flex;flex-direction:column;gap:8px;">
+          <div style="display:flex;align-items:center;gap:11px;background:var(--s3);border:1px solid var(--goldb);border-radius:9px;padding:11px 14px;">
+            <div style="font-size:1.2rem;">📊</div>
+            <div style="flex:1;"><div style="font-size:.8rem;font-weight:600;">Apresentação Oficial iGreen OS</div><div style="font-size:.65rem;color:var(--t2);">Pitch completo · diferenciais · planos · visão</div></div>
+            <a href="assets/docs/igreen-os-apresentacao.pdf" target="_blank" class="btn btn-gold" style="font-size:.68rem;padding:6px 13px;">⬇ Abrir PDF</a>
+          </div>
+          <div style="display:flex;align-items:center;gap:11px;background:var(--s3);border:1px solid var(--b1);border-radius:9px;padding:11px 14px;">
+            <div style="font-size:1.2rem;">🧠</div>
+            <div style="flex:1;"><div style="font-size:.8rem;font-weight:600;">Guia de Demonstração da IA</div><div style="font-size:.65rem;color:var(--t2);">Arquitetura em 3 camadas · roteiro de demo · perguntas do investidor</div></div>
+            <a href="assets/docs/guia-demonstracao-ia.pdf" target="_blank" class="btn btn-green" style="font-size:.68rem;padding:6px 13px;">⬇ Abrir PDF</a>
+          </div>
+          <div style="display:flex;align-items:center;gap:11px;background:var(--s3);border:1px solid var(--b1);border-radius:9px;padding:11px 14px;">
+            <div style="font-size:1.2rem;">📋</div>
+            <div style="flex:1;"><div style="font-size:.8rem;font-weight:600;">Script de Portabilidade</div><div style="font-size:.65rem;color:var(--t2);">Roteiro de conversa que converte · objeções comuns</div></div>
+            <button class="btn btn-ghost" style="font-size:.68rem;padding:6px 13px;" onclick="toast('📥 Em breve disponível')">Em breve</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+<script src="js/app.js"></script>
+<script>
+const CURSOS=[
+  {id:'c1',icon:'⚡',title:'Dominando o Agente Energy',desc:'Como a IA qualifica seus leads automaticamente e como maximizar conversões em cada conversa',dur:'25 min',mods:4},
+  {id:'c2',icon:'▦',title:'CRM Kanban na prática',desc:'Gerencie o funil visual, priorize leads quentes pelo score e nunca perca o timing de fechamento',dur:'18 min',mods:3},
+  {id:'c3',icon:'📱',title:'Disparos que convertem',desc:'Templates aprovados pela Meta, segmentação inteligente e os horários que mais geram resposta',dur:'22 min',mods:4},
+  {id:'c4',icon:'💼',title:'Recrutamento de licenciados',desc:'Expanda sua rede com o agente recrutador e multiplique sua renda recorrente mensal',dur:'30 min',mods:5},
+  {id:'c5',icon:'🎯',title:'Pitch de portabilidade',desc:'Objeções mais comuns e técnicas de fechamento para contas acima de R$250/mês',dur:'20 min',mods:3},
+  {id:'c6',icon:'🛡️',title:'Vendendo seguros iGreen',desc:'Vida, residencial e auto: argumentos consultivos que funcionam de verdade no WhatsApp',dur:'15 min',mods:3},
+];
+if(gfGuard()){
+  document.getElementById('sbMount').outerHTML = gfSidebar('treinamento');
+  renderCursos();
+}
+function renderCursos(){
+  const done = GF.store.g('cursosDone',[]);
+  document.getElementById('cursosGrid').innerHTML = CURSOS.map(cu=>{
+    const isDone = done.includes(cu.id);
+    return `
+    <div class="agent-v2" style="${isDone?'border-color:var(--b2);':''}">
+      <div>
+        <div class="agent-v2-head">
+          <div>
+            ${isDone?'<span class="pill pill-g">✓ Concluído</span>':'<span class="pill pill-gold">'+cu.mods+' módulos · '+cu.dur+'</span>'}
+            <div class="agent-v2-name">${cu.icon} ${cu.title}</div>
+          </div>
+        </div>
+        <p class="agent-prompt" style="font-style:normal;">${cu.desc}</p>
+      </div>
+      <button class="btn ${isDone?'btn-ghost':'btn-gold'}" style="width:100%;justify-content:center;" onclick="toggleCurso('${cu.id}')">
+        ${isDone?'↺ Rever curso':'▶ Iniciar curso'}
+      </button>
+    </div>`;
+  }).join('');
+  const pct = Math.round(done.length/CURSOS.length*100);
+  document.getElementById('acadPct').textContent = pct+'%';
+  document.getElementById('acadFill').style.width = pct+'%';
+  document.getElementById('acadCount').textContent = done.length+' de '+CURSOS.length+' cursos';
+}
+function toggleCurso(id){
+  let done = GF.store.g('cursosDone',[]);
+  if(done.includes(id)){ toast('▶ Reabrindo curso…'); }
+  else { done.push(id); GF.store.s('cursosDone',done); toast('✅ Curso concluído! Continue evoluindo 🎓'); }
+  renderCursos();
+}
+</script>
+</body>
+</html>

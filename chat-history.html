@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Histórico de Conversas · GreenFlow</title>
+<link rel="stylesheet" href="assets/css/style.css">
+<link rel="icon" href="assets/images/logo-greenflow.png">
+</head>
+<body>
+
+<div class="shell">
+  <div id="sbMount"></div>
+  <div class="main">
+    <div class="topbar">
+      <div class="tb-title">Histórico de Conversas<span class="tb-sub">todas as interações da IA com leads</span></div>
+      <div class="tb-acts"><button class="btn btn-ghost" onclick="clearHistory()">🗑 Limpar histórico</button></div>
+    </div>
+    <div class="content">
+      <div class="grid-2" style="grid-template-columns:340px 1fr;align-items:start;">
+        <div class="card">
+          <div class="ch"><div class="ch-t">💬 Conversas</div><span class="pill pill-g" id="convCount">0</span></div>
+          <div id="convList" style="max-height:65vh;overflow-y:auto;"></div>
+        </div>
+        <div class="card">
+          <div class="ch"><div class="ch-t">📄 Detalhe</div><span class="pill pill-gold" id="convAgent">—</span></div>
+          <div id="convDetail" style="padding:18px;max-height:65vh;overflow-y:auto;">
+            <div style="text-align:center;color:var(--t3);font-size:.76rem;padding:30px;">Selecione uma conversa ao lado</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="js/app.js"></script>
+<script src="js/claude-api.js"></script>
+<script>
+if(gfGuard()){
+  document.getElementById('sbMount').outerHTML = gfSidebar('chat-history');
+  renderList();
+}
+function getHistory(){
+  const h = GF.store.g('history',[]);
+  if(h.length) return h;
+  return [
+    {id:1,agent:'Energy',ts:'09/06/2025 14:32',count:6,messages:[
+      {role:'user',content:'Minha conta de luz veio R$420 esse mês, dá pra economizar?'},
+      {role:'assistant',content:'Com certeza! Com contas acima de R$250 você se qualifica para a portabilidade iGreen — economia de 15 a 35% sem obras. Você é pessoa física ou empresa?'},
+      {role:'user',content:'Pessoa física, casa própria'},
+      {role:'assistant',content:'Perfeito! Sem fidelidade e sem carência: a economia começa na próxima fatura. Me passa seu nome e WhatsApp que envio a simulação gratuita agora.'},
+      {role:'user',content:'Maria Souza, (85) 98877-1234'},
+      {role:'assistant',content:'Obrigada, Maria! ✅ Proposta enviada para seu WhatsApp pelo canal oficial. Score do seu perfil: 78pts — Quente 🔥'},
+    ]},
+    {id:2,agent:'Qualificador PJ',ts:'09/06/2025 11:18',count:4,messages:[
+      {role:'user',content:'Empresa com 3 filiais, conta total de R$8.400/mês'},
+      {role:'assistant',content:'Excelente perfil! Consumo acima de R$3.000 classifica como PJ+ prioritário. Economia projetada: R$1.200–R$2.900/mês. Score: 92pts — Urgente.'},
+      {role:'user',content:'Quais documentos precisamos?'},
+      {role:'assistant',content:'Apenas CNPJ, última fatura de energia e contrato social. O licenciado da sua região assume a partir daqui pelo WhatsApp oficial.'},
+    ]},
+  ];
+}
+let selected=null;
+function renderList(){
+  const h=getHistory();
+  document.getElementById('convCount').textContent=h.length;
+  document.getElementById('convList').innerHTML = h.map(cv=>`
+    <div onclick="openConv(${cv.id})" style="padding:13px 16px;border-bottom:1px solid rgba(0,209,104,.06);cursor:pointer;transition:background .15s;${selected===cv.id?'background:rgba(212,175,55,.08);border-left:3px solid var(--gold);':''}"
+      onmouseover="this.style.background='rgba(0,209,104,.03)'" onmouseout="this.style.background='${selected===cv.id?'rgba(212,175,55,.08)':''}'">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-weight:600;font-size:.8rem;">◈ ${cv.agent}</span>
+        <span class="pill pill-g">${cv.count} msgs</span>
+      </div>
+      <div style="font-size:.66rem;color:var(--t3);margin-top:3px;" class="mono">${cv.ts}</div>
+      <div style="font-size:.7rem;color:var(--t2);margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${(cv.messages[0]?.content||'').slice(0,60)}…</div>
+    </div>`).join('');
+}
+function openConv(id){
+  selected=id; renderList();
+  const cv=getHistory().find(x=>x.id===id); if(!cv)return;
+  document.getElementById('convAgent').textContent=cv.agent+' · '+cv.ts;
+  document.getElementById('convDetail').innerHTML = cv.messages.map(m=>`
+    <div class="chat-msg ${m.role==='assistant'?'ai':'user'}">
+      <div class="chat-av">${m.role==='assistant'?'◈':'👤'}</div>
+      <div class="chat-bub">${m.content}</div>
+    </div>`).join('');
+}
+function clearHistory(){ GF.store.s('history',[]); selected=null; renderList();
+  document.getElementById('convDetail').innerHTML='<div style="text-align:center;color:var(--t3);font-size:.76rem;padding:30px;">Histórico limpo</div>';
+  toast('🗑 Histórico limpo'); }
+</script>
+</body>
+</html>
